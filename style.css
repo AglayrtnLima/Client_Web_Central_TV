@@ -628,3 +628,28 @@ button:active {
     padding-left: 3rem;
     padding-right: 3rem;
 }
+
+/* Responsividade Global: Escala toda a interface baseada no tamanho da tela */
+@media (max-width: 1366px), (max-height: 800px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 1024px), (max-height: 600px) {
+    html {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px), (max-height: 450px) {
+    html {
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px), (max-height: 350px) {
+    html {
+        font-size: 7px;
+    }
+}

@@ -242,32 +242,12 @@ body {
     height: 100%;
 }
 
-.max-w-sm {
-    max-width: 24rem;
-}
-
 .max-w-md {
     max-width: 28rem;
 }
 
-.max-w-lg {
-    max-width: 32rem;
-}
-
-.max-w-xl {
-    max-width: 36rem;
-}
-
-.max-w-2xl {
-    max-width: 42rem;
-}
-
 .max-w-3xl {
     max-width: 48rem;
-}
-
-.max-w-4xl {
-    max-width: 56rem;
 }
 
 .px-5 {
@@ -458,14 +438,6 @@ body {
     height: 5rem;
 }
 
-.w-16 {
-    width: 4rem;
-}
-
-.h-16 {
-    height: 4rem;
-}
-
 .w-10 {
     width: 2.5rem;
 }
@@ -627,29 +599,4 @@ button:active {
 .px-12 {
     padding-left: 3rem;
     padding-right: 3rem;
-}
-
-/* Responsividade Global: Escala toda a interface baseada no tamanho da tela */
-@media (max-width: 1366px), (max-height: 800px) {
-    html {
-        font-size: 14px;
-    }
-}
-
-@media (max-width: 1024px), (max-height: 600px) {
-    html {
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 768px), (max-height: 450px) {
-    html {
-        font-size: 9px;
-    }
-}
-
-@media (max-width: 480px), (max-height: 350px) {
-    html {
-        font-size: 7px;
-    }
 }

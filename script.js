@@ -27,6 +27,7 @@ const screens = {
     activation: document.getElementById('screen-activation'),
     player: document.getElementById('screen-player'),
     blocked: document.getElementById('screen-blocked'),
+    rejected: document.getElementById('screen-rejected'),
     config: document.getElementById('overlay-config')
 };
 
@@ -40,7 +41,13 @@ const elements = {
     infoName: document.getElementById('info-name'),
     inputUrl: document.getElementById('input-server-url'),
     btnSave: document.getElementById('btn-save-config'),
+    btnRetry: document.getElementById('btn-retry'),
+    retryStatusText: document.getElementById('retry-status-text'),
     configHwid: document.getElementById('config-hwid'),
+    activationId: document.getElementById('activation-id'),
+    blockedId: document.getElementById('blocked-id'),
+    rejectedId: document.getElementById('rejected-id'),
+    idleId: document.getElementById('idle-id'),
     resolveStatus: document.getElementById('resolve-status')
 };
 
@@ -53,11 +60,16 @@ function init() {
     document.getElementById('logo-idle').src = LOGO_URL;
 
     // Hardware ID Display
-    elements.configHwid.textContent = config.hardwareId;
+    elements.configHwid.textContent = "HARDWARE ID: " + config.hardwareId;
     elements.deviceCode.textContent = config.hardwareId;
+    elements.activationId.textContent = "CÓDIGO: " + config.hardwareId;
+    elements.blockedId.textContent = "ID: " + config.hardwareId;
+    elements.rejectedId.textContent = "ID: " + config.hardwareId;
+    elements.idleId.textContent = "ID: " + config.hardwareId;
 
     // Listeners
     elements.btnSave.addEventListener('click', saveConfig);
+    elements.btnRetry.addEventListener('click', retryConnection);
 
     // Atalho para abrir config (Pressionar 'C' no teclado)
     window.addEventListener('keydown', (e) => {
@@ -179,6 +191,37 @@ async function saveConfig() {
     location.reload();
 }
 
+async function retryConnection() {
+    if (currentState !== 'rejected') return;
+    
+    elements.btnRetry.classList.add('bg-orange-500', 'border-white');
+    elements.btnRetry.classList.remove('bg-slate-700', 'border-slate-500');
+    setTimeout(() => {
+        elements.btnRetry.classList.remove('bg-orange-500', 'border-white');
+        elements.btnRetry.classList.add('bg-slate-700', 'border-slate-500');
+    }, 150);
+    
+    elements.retryStatusText.textContent = "Verificando acesso...";
+    
+    try {
+        const response = await safeFetch(`${config.serverUrl}/devices/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_code: config.hardwareId })
+        });
+        const data = await response.json();
+        
+        if (data.status === 'error' && data.message && data.message.toLowerCase().includes('desativado')) {
+            elements.retryStatusText.textContent = "Acesso ainda rejeitado.";
+        } else {
+            elements.retryStatusText.textContent = "";
+            checkStatusLoop(); // Força uma nova checagem completa que fará a transição
+        }
+    } catch (e) {
+        elements.retryStatusText.textContent = "Erro ao conectar com o servidor.";
+    }
+}
+
 // --- Lógica de Estados ---
 
 async function checkStatusLoop() {
@@ -197,9 +240,7 @@ async function checkStatusLoop() {
         } else if (data.message && (data.message.toLowerCase().includes('block') || data.message.toLowerCase().includes('bloqueado'))) {
             transitionTo('blocked');
         } else if (data.status === 'error' && data.message && data.message.toLowerCase().includes('desativado')) {
-            alert("Acesso rejeitado. A conexão deste dispositivo foi recusada no servidor.");
-            localStorage.removeItem('server_url');
-            location.reload();
+            transitionTo('rejected');
             return;
         } else {
             transitionTo('activation');
@@ -235,8 +276,15 @@ function transitionTo(state, data = null) {
         stopPlayer();
     }
 
-    if (state === 'blocked') {
-        document.getElementById('blocked-id').textContent = `ID: ${config.hardwareId}`;
+    if (state === 'blocked' || state === 'rejected') {
+        // ID já é configurado no init, mas caso precisemos atualizar
+        if (state === 'blocked') elements.blockedId.textContent = `ID: ${config.hardwareId}`;
+        if (state === 'rejected') {
+            elements.rejectedId.textContent = `ID: ${config.hardwareId}`;
+            elements.retryStatusText.textContent = "";
+            // foca no botão automaticamente
+            setTimeout(() => elements.btnRetry.focus(), 100);
+        }
     }
 }
 

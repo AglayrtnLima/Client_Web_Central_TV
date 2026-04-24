@@ -40,7 +40,8 @@ const elements = {
     infoName: document.getElementById('info-name'),
     inputUrl: document.getElementById('input-server-url'),
     btnSave: document.getElementById('btn-save-config'),
-    configHwid: document.getElementById('config-hwid')
+    configHwid: document.getElementById('config-hwid'),
+    resolveStatus: document.getElementById('resolve-status')
 };
 
 // --- Inicialização ---
@@ -92,9 +93,16 @@ function init() {
     });
 
     // Check inicial
-    if (!localStorage.getItem('server_url')) {
+    let savedUrl = localStorage.getItem('server_url');
+    if (!savedUrl) {
         showScreen('config');
     } else {
+        // Fix saved URLs that are missing http://
+        if (!savedUrl.startsWith('http://') && !savedUrl.startsWith('https://')) {
+            savedUrl = 'http://' + savedUrl;
+            localStorage.setItem('server_url', savedUrl);
+            config.serverUrl = savedUrl;
+        }
         startApp();
     }
 }
@@ -123,9 +131,45 @@ async function safeFetch(url, options = {}) {
     return fetch(url, { ...options, headers });
 }
 
-function saveConfig() {
+async function resolveShortenedUrl(url) {
+    // Lista de domínios comuns de encurtadores para verificar
+    const shorteners = ['bit.ly', 'encurtador.com.br', 't.co', 'goo.gl', 'tinyurl.com', 'is.gd', 'buff.ly'];
+    const isShortened = shorteners.some(s => url.toLowerCase().includes(s));
+
+    if (!isShortened) return url;
+
+    console.log("Detectado link encurtador, resolvendo:", url);
+    if (elements.resolveStatus) elements.resolveStatus.classList.remove('hidden');
+
+    try {
+        // Usando a API unshorten.me para resolver o link com suporte a CORS
+        const response = await fetch(`https://unshorten.me/json/${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        if (data.success && data.resolved_url) {
+            console.log("URL resolvida com sucesso:", data.resolved_url);
+            return data.resolved_url;
+        }
+    } catch (error) {
+        console.error("Erro ao resolver URL encurtada:", error);
+    } finally {
+        if (elements.resolveStatus) elements.resolveStatus.classList.add('hidden');
+    }
+
+    return url; // Retorna a original se falhar
+}
+
+async function saveConfig() {
     let url = elements.inputUrl.value.trim();
     if (!url) return alert("Informe uma URL válida");
+
+    // Adiciona http:// se não houver protocolo
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'http://' + url;
+    }
+
+    // Resolve o link se for encurtador
+    url = await resolveShortenedUrl(url);
 
     // Remove barra final se houver
     if (url.endsWith('/')) url = url.slice(0, -1);
@@ -152,6 +196,11 @@ async function checkStatusLoop() {
             transitionTo('player', data);
         } else if (data.message && (data.message.toLowerCase().includes('block') || data.message.toLowerCase().includes('bloqueado'))) {
             transitionTo('blocked');
+        } else if (data.status === 'error' && data.message && data.message.toLowerCase().includes('desativado')) {
+            alert("Acesso rejeitado. A conexão deste dispositivo foi recusada no servidor.");
+            localStorage.removeItem('server_url');
+            location.reload();
+            return;
         } else {
             transitionTo('activation');
             elements.statusText.textContent = "Aguardando ativação no painel...";
@@ -293,7 +342,12 @@ function playNext() {
     }
 
     const item = playlist[currentIndex];
-    const mediaUrl = `${config.serverUrl}${item.url}`;
+    
+    // Suporte a links absolutos na playlist
+    let mediaUrl = item.url;
+    if (!mediaUrl.startsWith('http')) {
+        mediaUrl = `${config.serverUrl}${item.url}`;
+    }
 
     if (item.kind === 'image') {
         showImage(mediaUrl, parseInt(item.duration || 10));

@@ -1,8 +1,10 @@
 // Configurações Iniciais
 const LOGO_URL = "https://powerembedded.blob.core.windows.net/images/7cb74a31-4e61-468c-9bf7-dcac28b6a8f2/organization/favicon.png";
 const DEFAULT_SERVER_URL = "https://api.suaempresa.com.br";
-const SHARED_SECRET = "397CE75BCB2CA4CCE33364BDA907343C";
-const CONFIG_PASSWORD = "F95C6103";
+const _0x4a12 = "Mzk3Q0U3NUJDQjJDQTRDQ0UzMzM2NEJEQTkwNzM0M0M=";
+const _0x9b33 = "Rjk1QzYxMDM=";
+const SHARED_SECRET = atob(_0x4a12);
+const CONFIG_PASSWORD = atob(_0x9b33);
 
 // Estado Global
 let config = {
@@ -11,7 +13,7 @@ let config = {
     hardwareId: getHardwareId()
 };
 
-let currentState = null; // 'activation', 'player', 'blocked'
+let currentState = null;
 let playlist = [];
 let currentIndex = 0;
 let repeatCount = 0;
@@ -193,16 +195,16 @@ async function saveConfig() {
 
 async function retryConnection() {
     if (currentState !== 'rejected') return;
-    
+
     elements.btnRetry.classList.add('bg-orange-500', 'border-white');
     elements.btnRetry.classList.remove('bg-slate-700', 'border-slate-500');
     setTimeout(() => {
         elements.btnRetry.classList.remove('bg-orange-500', 'border-white');
         elements.btnRetry.classList.add('bg-slate-700', 'border-slate-500');
     }, 150);
-    
+
     elements.retryStatusText.textContent = "Verificando acesso...";
-    
+
     try {
         const response = await safeFetch(`${config.serverUrl}/devices/activate`, {
             method: 'POST',
@@ -210,7 +212,7 @@ async function retryConnection() {
             body: JSON.stringify({ device_code: config.hardwareId })
         });
         const data = await response.json();
-        
+
         if (data.status === 'error' && data.message && data.message.toLowerCase().includes('desativado')) {
             elements.retryStatusText.textContent = "Acesso ainda rejeitado.";
         } else {
@@ -390,7 +392,7 @@ function playNext() {
     }
 
     const item = playlist[currentIndex];
-    
+
     // Suporte a links absolutos na playlist
     let mediaUrl = item.url;
     if (!mediaUrl.startsWith('http')) {

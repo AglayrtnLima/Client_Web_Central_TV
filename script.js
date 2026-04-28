@@ -251,7 +251,8 @@ async function checkStatusLoop() {
     } catch (error) {
         console.error("Erro ao verificar status:", error);
         transitionTo('activation');
-        elements.statusText.textContent = "Tentando conectar ao servidor...";
+        const shortUrl = config.serverUrl.replace(/^https?:\/\//, '').split('/')[0];
+        elements.statusText.textContent = `Erro de conexão em: ${shortUrl}`;
     }
 
     // Polling a cada 5 segundos se não estiver no player
